@@ -3,7 +3,7 @@
 require_once 'paypal.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    // handle creating an order
+    // handle capturing an order
     $orderID = $_GET['id'];
     $response = capture_order($orderID);
 
