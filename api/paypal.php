@@ -96,15 +96,49 @@ function capture_order($orderID) {
     return $response;
 }
 
-function handleResponse($response) {
-    try {
-        $jsonResponse = json_decode($response, true);
-        return [
-            'jsonResponse' => $jsonResponse,
-            'httpStatusCode' => http_response_code()
-        ];
-    } catch (Exception $e) {
-        $errorMessage = $response->getBody()->getContents();
-        throw new Exception($errorMessage);
-    }
+function refund_order($captureID) {
+    global $CLIENT_ID, $CLIENT_SECRET, $BASE_URL;
+
+    $ACCESS_TOKEN = get_auth_token();
+    $url = "$BASE_URL/v2/payments/captures/$captureID/refund";
+    
+    $ch = curl_init($url);
+
+    $headers = [
+        "Content-Type: application/json",
+        "Authorization: Bearer $ACCESS_TOKEN"
+    ];
+
+    $payload = [
+        "amount" => [
+            "value" => "200.00",
+            "currency_code" => "USD"
+        ],
+        "invoice_id" => "Invoice-" . substr($captureID, 5),
+        "note_to_payer" => "Out of stock",
+        "payment_instruction" => [
+            "playform_fees" => [
+                [
+                    "amount" => [
+                        "value" => "10",
+                        "currency_code" => "USD"
+                    ]
+                ]
+            ]
+        ]
+    ];
+
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    if(!$response) return false;
+    
+    return $response;
 }
